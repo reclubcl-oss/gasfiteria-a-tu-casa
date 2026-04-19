@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gasfitería a Tu Casa – Finanzas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --azul: #1a56db;
+      --azul-claro: #e8f0fe;
+      --verde: #0e9f6e;
+      --verde-claro: #def7ec;
+      --rojo: #e02424;
+      --rojo-claro: #fde8e8;
+      --gris: #6b7280;
+      --fondo: #f3f4f6;
+      --blanco: #ffffff;
+      --borde: #e5e7eb;
+      --texto: #111827;
+      --sombra: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--fondo); color: var(--texto); }
+
+    /* NAV */
+    nav { background: var(--azul); color: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    nav h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .3px; }
+    nav span { font-size: .8rem; opacity: .8; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { background: transparent; border: none; color: rgba(255,255,255,.75); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: .9rem; transition: background .2s, color .2s; }
+    .nav-tab.active, .nav-tab:hover { background: rgba(255,255,255,.18); color: #fff; }
+
+    /* MAIN */
+    main { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* CARDS RESUMEN */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .card { background: var(--blanco); border-radius: 12px; padding: 20px; box-shadow: var(--sombra); border-left: 4px solid transparent; }
+    .card.ing { border-color: var(--verde); }
+    .card.gast { border-color: var(--rojo); }
+    .card.neto { border-color: var(--azul); }
+    .card label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gris); }
+    .card .monto { font-size: 1.7rem; font-weight: 700; margin-top: 6px; }
+    .card.ing .monto { color: var(--verde); }
+    .card.gast .monto { color: var(--rojo); }
+    .card.neto .monto { color: var(--azul); }
+
+    /* FILTRO MES */
+    .filtros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .filtros label { font-size: .85rem; color: var(--gris); font-weight: 600; }
+    select, input[type=text], input[type=number], input[type=date], textarea {
+      border: 1px solid var(--borde); border-radius: 8px; padding: 8px 12px; font-size: .9rem; background: var(--blanco); color: var(--texto); outline: none; transition: border .2s;
+    }
+    select:focus, input:focus, textarea:focus { border-color: var(--azul); }
+    textarea { resize: vertical; min-height: 70px; }
+
+    /* TABLA */
+    .tabla-wrap { background: var(--blanco); border-radius: 12px; box-shadow: var(--sombra); overflow: hidden; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead tr { background: #f9fafb; }
+    th { padding: 12px 16px; text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; color: var(--gris); border-bottom: 1px solid var(--borde); }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f9fafb; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+    .badge.ing { background: var(--verde-claro); color: var(--verde); }
+    .badge.gast { background: var(--rojo-claro); color: var(--rojo); }
+    .btn-del { background: none; border: none; color: var(--gris); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; transition: color .2s; }
+    .btn-del:hover { color: var(--rojo); }
+
+    /* FORMULARIO AGREGAR */
+    .form-card { background: var(--blanco); border-radius: 12px; padding: 24px; box-shadow: var(--sombra); margin-bottom: 24px; }
+    .form-card h3 { font-size: 1rem; margin-bottom: 16px; color: var(--texto); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: .8rem; font-weight: 600; color: var(--gris); }
+    .form-group.full { grid-column: 1 / -1; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: .9rem; font-weight: 600; transition: opacity .2s; }
+    .btn-primary { background: var(--azul); color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-success { background: var(--verde); color: #fff; }
+    .btn-success:hover { opacity: .88; }
+    .btn-outline { background: transparent; border: 1px solid var(--borde); color: var(--texto); }
+    .btn-outline:hover { background: var(--fondo); }
+    .form-actions { margin-top: 16px; display: flex; gap: 10px; }
+
+    /* GRÁFICO */
+    .chart-wrap { background: var(--blanco); border-radius: 12px; padding: 24px; box-shadow: var(--sombra); margin-bottom: 24px; }
+    .chart-wrap h3 { font-size: .95rem; margin-bottom: 16px; color: var(--gris); font-weight: 600; }
+    canvas { max-height: 280px; }
+
+    /* PRESUPUESTO */
+    .presup-form { background: var(--blanco); border-radius: 12px; padding: 28px; box-shadow: var(--sombra); margin-bottom: 24px; }
+    .presup-form h3 { font-size: 1.1rem; margin-bottom: 20px; }
+    .presup-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .items-table th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: .8rem; color: var(--gris); border: 1px solid var(--borde); }
+    .items-table td { padding: 8px 10px; border: 1px solid var(--borde); }
+    .items-table input { border: none; width: 100%; background: transparent; font-size: .88rem; }
+    .items-table input:focus { outline: 1px solid var(--azul); border-radius: 4px; }
+    .totales { text-align: right; margin-top: 10px; }
+    .totales p { font-size: .9rem; padding: 4px 0; }
+    .totales .total-final { font-size: 1.1rem; font-weight: 700; color: var(--azul); }
+
+    /* PREVIEW IMPRIMIBLE */
+    #preview { display: none; }
+    @media print {
+      nav, .nav-tabs, .btn, .form-card, .filtros, .form-actions, #preview-btn-bar { display: none !important; }
+      #preview { display: block !important; }
+      .section { display: none !important; }
+      #preview { page-break-inside: avoid; }
+      body { background: white; }
+    }
+
+    .preview-doc { background: #fff; padding: 40px; max-width: 800px; margin: 0 auto; border: 1px solid var(--borde); border-radius: 8px; }
+    .preview-doc .doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid var(--azul); padding-bottom: 20px; }
+    .preview-doc .empresa-info h2 { color: var(--azul); font-size: 1.4rem; }
+    .preview-doc .empresa-info p { color: var(--gris); font-size: .85rem; margin-top: 4px; }
+    .preview-doc .presup-meta { text-align: right; }
+    .preview-doc .presup-meta h3 { font-size: 1.1rem; color: var(--azul); }
+    .preview-doc .presup-meta p { font-size: .85rem; color: var(--gris); }
+    .cliente-box { background: var(--azul-claro); border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+    .cliente-box h4 { font-size: .8rem; text-transform: uppercase; color: var(--azul); letter-spacing: .5px; margin-bottom: 8px; }
+    .doc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .doc-table th { background: var(--azul); color: white; padding: 10px 14px; text-align: left; font-size: .82rem; }
+    .doc-table td { padding: 10px 14px; border-bottom: 1px solid var(--borde); font-size: .88rem; }
+    .doc-table tbody tr:nth-child(even) { background: #f9fafb; }
+    .doc-totales { text-align: right; margin-bottom: 24px; }
+    .doc-totales p { padding: 4px 0; font-size: .9rem; }
+    .doc-totales .doc-total { font-size: 1.2rem; font-weight: 700; color: var(--azul); }
+    .doc-footer { margin-top: 30px; border-top: 1px solid var(--borde); padding-top: 16px; font-size: .8rem; color: var(--gris); text-align: center; }
+    .validez-box { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px; font-size: .85rem; margin-bottom: 20px; color: #92400e; }
+
+    @media (max-width: 640px) {
+      nav { flex-direction: column; height: auto; padding: 12px; gap: 8px; }
+      .presup-header-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <h1>🔧 Gasfitería a Tu Casa</h1>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="mostrarSeccion('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="mostrarSeccion('movimientos')">Movimientos</button>
+    <button class="nav-tab" onclick="mostrarSeccion('presupuesto')">Presupuesto</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section id="s-dashboard" class="section active">
+    <div class="filtros">
+      <label>Período:</label>
+      <select id="filtro-mes" onchange="renderDashboard()">
+        <option value="todos">Todo el tiempo</option>
+      </select>
+    </div>
+
+    <div class="cards">
+      <div class="card ing">
+        <label>Ingresos</label>
+        <div class="monto" id="res-ingresos">$0</div>
+      </div>
+      <div class="card gast">
+        <label>Gastos</label>
+        <div class="monto" id="res-gastos">$0</div>
+      </div>
+      <div class="card neto">
+        <label>Ganancia Neta</label>
+        <div class="monto" id="res-neto">$0</div>
+      </div>
+      <div class="card" style="border-color:#f59e0b">
+        <label>Nº Trabajos</label>
+        <div class="monto" style="color:#f59e0b" id="res-trabajos">0</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <h3>Ingresos vs Gastos por mes</h3>
+      <canvas id="grafico"></canvas>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Cliente / Proveedor</th>
+            <th>Tipo</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-dashboard"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== MOVIMIENTOS ===== -->
+  <section id="s-movimientos" class="section">
+    <div class="form-card">
+      <h3>Registrar movimiento</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="m-fecha" />
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="m-tipo">
+            <option value="ingreso">Ingreso</option>
+            <option value="gasto">Gasto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="m-categoria">
+            <option>Servicio de gasfitería</option>
+            <option>Instalación</option>
+            <option>Reparación</option>
+            <option>Mantención</option>
+            <option>Materiales</option>
+            <option>Transporte</option>
+            <option>Herramientas</option>
+            <option>Publicidad</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Monto ($)</label>
+          <input type="number" id="m-monto" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Cliente / Proveedor</label>
+          <input type="text" id="m-cliente" placeholder="Nombre" />
+        </div>
+        <div class="form-group full">
+          <label>Descripción del trabajo</label>
+          <textarea id="m-desc" placeholder="Ej: Cambio de cañería cocina, instalación de llave de paso…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="agregarMovimiento()">Agregar</button>
+        <button class="btn btn-outline" onclick="limpiarForm()">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <label>Filtrar:</label>
+      <select id="f-tipo" onchange="renderMovimientos()">
+        <option value="todos">Todos</option>
+        <option value="ingreso">Solo ingresos</option>
+        <option value="gasto">Solo gastos</option>
+      </select>
+      <select id="f-mes" onchange="renderMovimientos()">
+        <option value="todos">Todos los meses</option>
+      </select>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Cliente / Proveedor</th>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabla-movimientos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== PRESUPUESTO ===== -->
+  <section id="s-presupuesto" class="section">
+    <div class="presup-form">
+      <h3>Generar presupuesto para cliente</h3>
+
+      <div class="presup-header-grid">
+        <div class="form-group">
+          <label>Nombre del cliente</label>
+          <input type="text" id="p-cliente" placeholder="Nombre completo" />
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" id="p-direccion" placeholder="Dirección del servicio" />
+        </div>
+        <div class="form-group">
+          <label>Teléfono cliente</label>
+          <input type="text" id="p-telefono" placeholder="+56 9 XXXX XXXX" />
+        </div>
+        <div class="form-group">
+          <label>Fecha presupuesto</label>
+          <input type="date" id="p-fecha" />
+        </div>
+        <div class="form-group">
+          <label>N° presupuesto</label>
+          <input type="text" id="p-numero" placeholder="001" />
+        </div>
+        <div class="form-group">
+          <label>Validez (días)</label>
+          <input type="number" id="p-validez" value="15" min="1" />
+        </div>
+        <div class="form-group full">
+          <label>Descripción general del trabajo</label>
+          <textarea id="p-desc-general" placeholder="Descripción del trabajo a realizar…"></textarea>
+        </div>
+      </div>
+
+      <h4 style="margin-bottom:12px; font-size:.9rem; color:var(--gris);">Detalle de ítems</h4>
+      <table class="items-table" id="items-tabla">
+        <thead>
+          <tr>
+            <th style="width:50%">Descripción ítem</th>
+            <th style="width:10%">Cant.</th>
+            <th style="width:18%">Precio unit.</th>
+            <th style="width:15%">Subtotal</th>
+            <th style="width:7%"></th>
+          </tr>
+        </thead>
+        <tbody id="items-body"></tbody>
+      </table>
+      <button class="btn btn-outline" style="font-size:.85rem; margin-bottom:16px" onclick="agregarItem()">+ Agregar ítem</button>
+
+      <div class="totales" id="totales-presup"></div>
+
+      <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+        <div class="form-group" style="flex:1; min-width:150px;">
+          <label>Descuento (%)</label>
+          <input type="number" id="p-descuento" value="0" min="0" max="100" oninput="calcularTotales()" />
+        </div>
+        <div class="form-group" style="flex:1; min-width:150px;">
+          <label>IVA (%) – 0 si no aplica</label>
+          <input type="number" id="p-iva" value="0" min="0" oninput="calcularTotales()" />
+        </div>
+        <div class="form-group" style="flex:2; min-width:200px;">
+          <label>Condiciones de pago</label>
+          <input type="text" id="p-pago" value="50% anticipo, 50% al término del trabajo" />
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:20px;">
+        <button class="btn btn-primary" onclick="generarPreview()">Vista previa</button>
+        <button class="btn btn-success" onclick="imprimirPresupuesto()">Descargar / Imprimir PDF</button>
+        <button class="btn btn-outline" onclick="limpiarPresupuesto()">Limpiar</button>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div id="preview-contenedor" style="display:none;">
+      <div id="preview-btn-bar" style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="btn btn-success" onclick="imprimirPresupuesto()">Imprimir / Guardar PDF</button>
+        <button class="btn btn-outline" onclick="document.getElementById('preview-contenedor').style.display='none'">Cerrar vista previa</button>
+      </div>
+      <div class="preview-doc" id="preview-doc"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ── DATOS ──────────────────────────────────────────────────────────────
+let movimientos = JSON.parse(localStorage.getItem('gac_movimientos') || '[]');
+let itemsPresup = [];
+
+function guardar() {
+  localStorage.setItem('gac_movimientos', JSON.stringify(movimientos));
+}
+
+// ── NAV ────────────────────────────────────────────────────────────────
+function mostrarSeccion(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'movimientos') { poblarFiltroMes('f-mes'); renderMovimientos(); }
+}
+
+// ── FORMATO ────────────────────────────────────────────────────────────
+function fmt(n) {
+  return '$' + Math.abs(n).toLocaleString('es-CL');
+}
+function fmtFecha(s) {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── MESES ──────────────────────────────────────────────────────────────
+function mesesUnicos() {
+  const set = new Set(movimientos.map(m => m.fecha.slice(0, 7)));
+  return Array.from(set).sort().reverse();
+}
+function poblarFiltroMes(selectId) {
+  const sel = document.getElementById(selectId);
+  const val = sel.value;
+  sel.innerHTML = '<option value="todos">Todos los meses</option>';
+  mesesUnicos().forEach(m => {
+    const [y, mo] = m.split('-');
+    const nombre = new Date(y, mo - 1).toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+    sel.innerHTML += `<option value="${m}">${nombre}</option>`;
+  });
+  sel.value = val;
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────
+function renderDashboard() {
+  poblarFiltroMes('filtro-mes');
+  const mes = document.getElementById('filtro-mes').value;
+  const filtrados = mes === 'todos' ? movimientos : movimientos.filter(m => m.fecha.startsWith(mes));
+
+  const ingresos = filtrados.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.monto, 0);
+  const gastos   = filtrados.filter(m => m.tipo === 'gasto').reduce((s, m) => s + m.monto, 0);
+  const neto     = ingresos - gastos;
+
+  document.getElementById('res-ingresos').textContent = fmt(ingresos);
+  document.getElementById('res-gastos').textContent = fmt(gastos);
+  document.getElementById('res-neto').textContent = (neto < 0 ? '-' : '') + fmt(neto);
+  document.getElementById('res-neto').style.color = neto >= 0 ? 'var(--azul)' : 'var(--rojo)';
+  document.getElementById('res-trabajos').textContent = filtrados.filter(m => m.tipo === 'ingreso').length;
+
+  const tbody = document.getElementById('tabla-dashboard');
+  const recientes = [...filtrados].sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 15);
+  tbody.innerHTML = recientes.length ? recientes.map(row).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--gris);padding:24px">Sin registros</td></tr>';
+
+  renderGrafico();
+}
+
+function row(m) {
+  return `<tr>
+    <td>${fmtFecha(m.fecha)}</td>
+    <td><b>${m.categoria}</b><br><span style="color:var(--gris);font-size:.8rem">${m.descripcion || ''}</span></td>
+    <td>${m.cliente || '—'}</td>
+    <td><span class="badge ${m.tipo === 'ingreso' ? 'ing' : 'gast'}">${m.tipo}</span></td>
+    <td><b>${m.tipo === 'gasto' ? '-' : ''}${fmt(m.monto)}</b></td>
+  </tr>`;
+}
+
+// ── GRÁFICO ────────────────────────────────────────────────────────────
+let graficoInst = null;
+function renderGrafico() {
+  const porMes = {};
+  movimientos.forEach(m => {
+    const k = m.fecha.slice(0, 7);
+    if (!porMes[k]) porMes[k] = { ing: 0, gast: 0 };
+    if (m.tipo === 'ingreso') porMes[k].ing += m.monto;
+    else porMes[k].gast += m.monto;
+  });
+  const meses = Object.keys(porMes).sort().slice(-12);
+  const labels = meses.map(m => {
+    const [y, mo] = m.split('-');
+    return new Date(y, mo - 1).toLocaleString('es-CL', { month: 'short', year: '2-digit' });
+  });
+  const ings  = meses.map(m => porMes[m].ing);
+  const gasts = meses.map(m => porMes[m].gast);
+
+  const ctx = document.getElementById('grafico').getContext('2d');
+  if (graficoInst) graficoInst.destroy();
+  graficoInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Ingresos', data: ings, backgroundColor: '#0e9f6e99', borderColor: '#0e9f6e', borderWidth: 2 },
+        { label: 'Gastos',   data: gasts, backgroundColor: '#e0242499', borderColor: '#e02424', borderWidth: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-CL') } } }
+    }
+  });
+}
+
+// ── MOVIMIENTOS ────────────────────────────────────────────────────────
+function renderMovimientos() {
+  const tipo = document.getElementById('f-tipo').value;
+  const mes  = document.getElementById('f-mes').value;
+  let datos = [...movimientos].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  if (tipo !== 'todos') datos = datos.filter(m => m.tipo === tipo);
+  if (mes !== 'todos')  datos = datos.filter(m => m.fecha.startsWith(mes));
+
+  const tbody = document.getElementById('tabla-movimientos');
+  tbody.innerHTML = datos.length ? datos.map((m, i) => `<tr>
+    <td>${fmtFecha(m.fecha)}</td>
+    <td>${m.categoria}</td>
+    <td>${m.descripcion || '—'}</td>
+    <td>${m.cliente || '—'}</td>
+    <td><span class="badge ${m.tipo === 'ingreso' ? 'ing' : 'gast'}">${m.tipo}</span></td>
+    <td><b>${m.tipo === 'gasto' ? '-' : ''}${fmt(m.monto)}</b></td>
+    <td><button class="btn-del" onclick="eliminarMovimiento('${m.id}')" title="Eliminar">✕</button></td>
+  </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--gris);padding:24px">Sin registros</td></tr>';
+}
+
+function agregarMovimiento() {
+  const fecha = document.getElementById('m-fecha').value;
+  const monto = parseFloat(document.getElementById('m-monto').value);
+  if (!fecha || !monto || monto <= 0) { alert('Completa fecha y monto'); return; }
+
+  movimientos.push({
+    id: Date.now().toString(),
+    fecha,
+    tipo:        document.getElementById('m-tipo').value,
+    categoria:   document.getElementById('m-categoria').value,
+    monto,
+    cliente:     document.getElementById('m-cliente').value.trim(),
+    descripcion: document.getElementById('m-desc').value.trim()
+  });
+  guardar();
+  limpiarForm();
+  poblarFiltroMes('f-mes');
+  renderMovimientos();
+  renderDashboard();
+  alert('Movimiento registrado ✓');
+}
+
+function eliminarMovimiento(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  movimientos = movimientos.filter(m => m.id !== id);
+  guardar();
+  renderMovimientos();
+  renderDashboard();
+}
+
+function limpiarForm() {
+  ['m-fecha','m-monto','m-cliente','m-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-tipo').value = 'ingreso';
+  document.getElementById('m-categoria').value = 'Servicio de gasfitería';
+}
+
+// ── PRESUPUESTO ────────────────────────────────────────────────────────
+function agregarItem() {
+  const id = Date.now().toString();
+  itemsPresup.push({ id, desc: '', cant: 1, precio: 0 });
+  renderItems();
+}
+
+function renderItems() {
+  const tbody = document.getElementById('items-body');
+  tbody.innerHTML = itemsPresup.map(it => `<tr>
+    <td><input type="text" value="${it.desc}" placeholder="Descripción del ítem" oninput="actualizarItem('${it.id}', 'desc', this.value)" /></td>
+    <td><input type="number" value="${it.cant}" min="1" style="width:60px" oninput="actualizarItem('${it.id}', 'cant', this.value)" /></td>
+    <td><input type="number" value="${it.precio}" min="0" placeholder="0" oninput="actualizarItem('${it.id}', 'precio', this.value)" /></td>
+    <td style="font-weight:600">${fmt(it.cant * it.precio)}</td>
+    <td><button class="btn-del" onclick="eliminarItem('${it.id}')">✕</button></td>
+  </tr>`).join('');
+  calcularTotales();
+}
+
+function actualizarItem(id, campo, valor) {
+  const it = itemsPresup.find(i => i.id === id);
+  if (!it) return;
+  it[campo] = campo === 'desc' ? valor : parseFloat(valor) || 0;
+  calcularTotales();
+}
+
+function eliminarItem(id) {
+  itemsPresup = itemsPresup.filter(i => i.id !== id);
+  renderItems();
+}
+
+function calcularTotales() {
+  const subtotal  = itemsPresup.reduce((s, it) => s + it.cant * it.precio, 0);
+  const descPct   = parseFloat(document.getElementById('p-descuento').value) || 0;
+  const ivaPct    = parseFloat(document.getElementById('p-iva').value) || 0;
+  const descuento = subtotal * descPct / 100;
+  const base      = subtotal - descuento;
+  const iva       = base * ivaPct / 100;
+  const total     = base + iva;
+
+  document.getElementById('totales-presup').innerHTML = `
+    <p>Subtotal: <b>${fmt(subtotal)}</b></p>
+    ${descPct > 0 ? `<p>Descuento (${descPct}%): <b>-${fmt(descuento)}</b></p>` : ''}
+    ${ivaPct  > 0 ? `<p>IVA (${ivaPct}%): <b>${fmt(iva)}</b></p>` : ''}
+    <p class="total-final">TOTAL: ${fmt(total)}</p>
+  `;
+  return { subtotal, descuento, iva, total, descPct, ivaPct };
+}
+
+function generarPreview() {
+  const cliente   = document.getElementById('p-cliente').value || 'Sin nombre';
+  const direccion = document.getElementById('p-direccion').value || '';
+  const telefono  = document.getElementById('p-telefono').value || '';
+  const fecha     = document.getElementById('p-fecha').value;
+  const numero    = document.getElementById('p-numero').value || '001';
+  const validez   = document.getElementById('p-validez').value || '15';
+  const pago      = document.getElementById('p-pago').value || '';
+  const descGen   = document.getElementById('p-desc-general').value || '';
+  const { subtotal, descuento, iva, total, descPct, ivaPct } = calcularTotales();
+
+  const fechaVenc = fecha ? new Date(new Date(fecha).getTime() + validez * 86400000).toLocaleDateString('es-CL') : '';
+
+  const filasItems = itemsPresup.map(it => `
+    <tr>
+      <td>${it.desc || '—'}</td>
+      <td style="text-align:center">${it.cant}</td>
+      <td style="text-align:right">${fmt(it.precio)}</td>
+      <td style="text-align:right"><b>${fmt(it.cant * it.precio)}</b></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('preview-doc').innerHTML = `
+    <div class="doc-header">
+      <div class="empresa-info">
+        <h2>🔧 Gasfitería a Tu Casa</h2>
+        <p>Servicios de gasfitería profesional</p>
+        <p>Tel: +56 9 XXXX XXXX · gasfiteriaatucasa@mail.com</p>
+      </div>
+      <div class="presup-meta">
+        <h3>PRESUPUESTO N° ${numero}</h3>
+        <p>Fecha: ${fmtFecha(fecha) || new Date().toLocaleDateString('es-CL')}</p>
+        <p>Válido hasta: ${fechaVenc || '—'}</p>
+      </div>
+    </div>
+
+    <div class="cliente-box">
+      <h4>Datos del cliente</h4>
+      <p><b>${cliente}</b></p>
+      ${direccion ? `<p>${direccion}</p>` : ''}
+      ${telefono  ? `<p>Tel: ${telefono}</p>` : ''}
+    </div>
+
+    ${descGen ? `<p style="margin-bottom:16px;font-size:.9rem;color:#374151"><b>Trabajo a realizar:</b> ${descGen}</p>` : ''}
+
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th style="text-align:center">Cant.</th>
+          <th style="text-align:right">Precio unit.</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>${filasItems || '<tr><td colspan="4" style="text-align:center;color:gray">Sin ítems</td></tr>'}</tbody>
+    </table>
+
+    <div class="doc-totales">
+      <p>Subtotal: <b>${fmt(subtotal)}</b></p>
+      ${descPct > 0 ? `<p>Descuento (${descPct}%): <b>-${fmt(descuento)}</b></p>` : ''}
+      ${ivaPct  > 0 ? `<p>IVA (${ivaPct}%): <b>${fmt(iva)}</b></p>` : ''}
+      <p class="doc-total">TOTAL: ${fmt(total)}</p>
+    </div>
+
+    <div class="validez-box">
+      ⚠️ Este presupuesto tiene validez de <b>${validez} días</b> desde su emisión.
+      ${fechaVenc ? `Vence el <b>${fechaVenc}</b>.` : ''}
+    </div>
+
+    <p style="font-size:.9rem"><b>Condiciones de pago:</b> ${pago}</p>
+
+    <div class="doc-footer">
+      <p>Gasfitería a Tu Casa · Presupuesto N° ${numero}</p>
+      <p>Gracias por confiar en nuestros servicios</p>
+    </div>
+  `;
+
+  document.getElementById('preview-contenedor').style.display = 'block';
+  document.getElementById('preview-contenedor').scrollIntoView({ behavior: 'smooth' });
+}
+
+function imprimirPresupuesto() {
+  if (document.getElementById('preview-contenedor').style.display === 'none') {
+    generarPreview();
+    setTimeout(() => window.print(), 400);
+  } else {
+    window.print();
+  }
+}
+
+function limpiarPresupuesto() {
+  ['p-cliente','p-direccion','p-telefono','p-desc-general','p-numero'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-validez').value = '15';
+  document.getElementById('p-descuento').value = '0';
+  document.getElementById('p-iva').value = '0';
+  document.getElementById('p-pago').value = '50% anticipo, 50% al término del trabajo';
+  document.getElementById('p-fecha').value = '';
+  itemsPresup = [];
+  renderItems();
+  document.getElementById('preview-contenedor').style.display = 'none';
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────
+(function init() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  document.getElementById('m-fecha').value = hoy;
+  document.getElementById('p-fecha').value = hoy;
+  document.getElementById('p-numero').value = String(Date.now()).slice(-4);
+
+  poblarFiltroMes('filtro-mes');
+  renderDashboard();
+
+  // Ítem inicial en presupuesto
+  agregarItem();
+})();
+</script>
+</body>
+</html>
