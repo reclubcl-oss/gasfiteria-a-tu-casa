@@ -6,6 +6,8 @@
   <title>Gasfitería a Tu Casa – Finanzas</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
       --azul:        #0033A0;
@@ -1192,12 +1194,53 @@ function generarPreview() {
   document.getElementById('preview-contenedor').scrollIntoView({ behavior: 'smooth' });
 }
 
-function imprimirPresupuesto() {
+async function imprimirPresupuesto() {
   if (document.getElementById('preview-contenedor').style.display === 'none') {
     generarPreview();
-    setTimeout(() => window.print(), 450);
-  } else {
-    window.print();
+    await new Promise(r => setTimeout(r, 450));
+  }
+
+  const btn = document.querySelector('[onclick="imprimirPresupuesto()"]');
+  const textoOriginal = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '⏳ Generando PDF...'; btn.disabled = true; }
+
+  try {
+    const el = document.getElementById('preview-doc');
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW  = pdf.internal.pageSize.getWidth();
+    const pageH  = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW   = pageW - margin * 2;
+    const imgH   = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+
+    let y = margin;
+    let heightLeft = imgH;
+
+    pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
+    heightLeft -= (pageH - margin * 2);
+
+    while (heightLeft > 0) {
+      pdf.addPage();
+      y = -(imgH - heightLeft) - margin;
+      pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
+      heightLeft -= (pageH - margin * 2);
+    }
+
+    const numero  = document.getElementById('p-numero').value || '001';
+    const cliente = document.getElementById('p-cliente').value.trim().replace(/\s+/g, '_') || 'cliente';
+    pdf.save(`Presupuesto_${numero}_${cliente}.pdf`);
+  } finally {
+    if (btn) { btn.innerHTML = textoOriginal; btn.disabled = false; }
   }
 }
 
