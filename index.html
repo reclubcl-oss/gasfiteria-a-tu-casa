@@ -296,24 +296,29 @@
     ══════════════════════════════════════ */
     .presup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
     .items-wrap { overflow-x: auto; }
-    .items-tbl { width: 100%; border-collapse: collapse; min-width: 540px; }
+    .items-tbl { width: 100%; border-collapse: collapse; min-width: 560px; table-layout: fixed; }
     .items-tbl th {
       background: var(--fondo2); padding: 10px 14px; text-align: left;
       font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
       color: var(--texto2); border: 1px solid var(--borde);
     }
-    .items-tbl td { padding: 8px 10px; border: 1px solid var(--borde); }
+    .items-tbl td { padding: 8px 10px; border: 1px solid var(--borde); overflow: hidden; }
     .items-tbl input {
       border: none; width: 100%; background: transparent; font-size: .88rem;
-      padding: 4px; box-shadow: none;
+      padding: 4px; box-shadow: none; min-width: 0;
     }
     .items-tbl input:focus { outline: 2px solid var(--azul); border-radius: 4px; }
+    .items-tbl .col-desc  { width: 44%; }
+    .items-tbl .col-cant  { width: 9%; text-align: center; }
+    .items-tbl .col-precio { width: 21%; }
+    .items-tbl .col-sub   { width: 20%; font-weight: 700; color: var(--azul); white-space: nowrap; }
+    .items-tbl .col-del   { width: 6%; text-align: center; }
     .totales-box {
-      background: var(--azul-claro); border-radius: 12px; padding: 18px 22px;
-      text-align: right; margin: 12px 0;
+      background: var(--azul-claro); border-radius: 12px; padding: 16px 20px;
+      text-align: right; margin-top: 14px;
     }
-    .totales-box p { font-size: .88rem; color: var(--texto2); padding: 3px 0; }
-    .totales-box .t-total { font-size: 1.3rem; font-weight: 800; color: var(--azul); margin-top: 8px; }
+    .totales-box p { font-size: .88rem; color: var(--texto2); padding: 3px 0; white-space: nowrap; }
+    .totales-box .t-total { font-size: 1.25rem; font-weight: 800; color: var(--azul); margin-top: 8px; white-space: nowrap; }
 
     /* ══════════════════════════════════════
        PRESUPUESTO PREVIEW
@@ -682,11 +687,11 @@
         <table class="items-tbl">
           <thead>
             <tr>
-              <th style="width:48%">Descripción del ítem / servicio</th>
-              <th style="width:10%">Cant.</th>
-              <th style="width:20%">Precio unit. ($)</th>
-              <th style="width:16%">Subtotal</th>
-              <th style="width:6%"></th>
+              <th class="col-desc">Descripción del ítem / servicio</th>
+              <th class="col-cant">Cant.</th>
+              <th class="col-precio">Precio unit. ($)</th>
+              <th class="col-sub">Subtotal</th>
+              <th class="col-del"></th>
             </tr>
           </thead>
           <tbody id="items-body"></tbody>
@@ -694,19 +699,17 @@
       </div>
       <button class="btn btn-outline btn-sm" style="margin:10px 0 16px" onclick="agregarItem()">+ Agregar ítem</button>
 
-      <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end;">
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <div class="form-group" style="min-width:130px; flex:1;">
-            <label>Descuento (%)</label>
-            <input type="number" id="p-descuento" value="0" min="0" max="100" oninput="calcularTotales()" />
-          </div>
-          <div class="form-group" style="min-width:130px; flex:1;">
-            <label>IVA (%) — 0 si no aplica</label>
-            <input type="number" id="p-iva" value="0" min="0" oninput="calcularTotales()" />
-          </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
+        <div class="form-group" style="min-width:130px; flex:1;">
+          <label>Descuento (%)</label>
+          <input type="number" id="p-descuento" value="0" min="0" max="100" oninput="calcularTotales()" />
         </div>
-        <div class="totales-box" id="totales-presup"></div>
+        <div class="form-group" style="min-width:130px; flex:1;">
+          <label>IVA (%) — 0 si no aplica</label>
+          <input type="number" id="p-iva" value="0" min="0" oninput="calcularTotales()" />
+        </div>
       </div>
+      <div class="totales-box" id="totales-presup"></div>
 
       <div class="form-actions" style="margin-top:22px;">
         <button class="btn btn-primary" onclick="generarPreview()">👁 Vista previa</button>
@@ -1062,14 +1065,14 @@ function agregarItem() {
 
 function renderItems() {
   document.getElementById('items-body').innerHTML = itemsPresup.map(it => `<tr>
-    <td><input type="text" value="${it.desc.replace(/"/g,'&quot;')}" placeholder="Descripción del ítem o servicio"
+    <td class="col-desc"><input type="text" value="${it.desc.replace(/"/g,'&quot;')}" placeholder="Descripción del ítem o servicio"
         oninput="actualizarItem('${it.id}','desc',this.value)" /></td>
-    <td><input type="number" value="${it.cant}" min="1" style="width:60px"
+    <td class="col-cant"><input type="number" value="${it.cant}" min="1"
         oninput="actualizarItem('${it.id}','cant',this.value)" /></td>
-    <td><input type="text" value="${it.precio || ''}" placeholder="0" inputmode="numeric"
+    <td class="col-precio"><input type="text" value="${it.precio || ''}" placeholder="0" inputmode="numeric"
         oninput="actualizarItem('${it.id}','precio',this.value)" /></td>
-    <td style="font-weight:700; color:var(--azul)">${clp(it.cant * it.precio)}</td>
-    <td><button class="btn-del" onclick="eliminarItem('${it.id}')">✕</button></td>
+    <td class="col-sub">${clp(it.cant * it.precio)}</td>
+    <td class="col-del"><button class="btn-del" onclick="eliminarItem('${it.id}')">✕</button></td>
   </tr>`).join('');
   calcularTotales();
 }
@@ -1195,52 +1198,62 @@ function generarPreview() {
 }
 
 async function imprimirPresupuesto() {
+  // Mostrar preview si no está visible
   if (document.getElementById('preview-contenedor').style.display === 'none') {
     generarPreview();
-    await new Promise(r => setTimeout(r, 450));
+    await new Promise(r => setTimeout(r, 600));
   }
 
-  const btn = document.querySelector('[onclick="imprimirPresupuesto()"]');
-  const textoOriginal = btn ? btn.innerHTML : '';
-  if (btn) { btn.innerHTML = '⏳ Generando PDF...'; btn.disabled = true; }
+  // Deshabilitar todos los botones de descarga
+  const btns = document.querySelectorAll('button[onclick="imprimirPresupuesto()"]');
+  btns.forEach(b => { b._txt = b.innerHTML; b.innerHTML = '⏳ Generando PDF...'; b.disabled = true; });
 
   try {
     const el = document.getElementById('preview-doc');
+
+    // Capturar el HTML como imagen
     const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       backgroundColor: '#ffffff',
-      logging: false
+      logging: false,
+      imageTimeout: 15000,
+      windowWidth: 900
     });
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    const pageW  = pdf.internal.pageSize.getWidth();
-    const pageH  = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const imgW   = pageW - margin * 2;
-    const imgH   = (canvas.height * imgW) / canvas.width;
-    const imgData = canvas.toDataURL('image/png');
+    const pageW = pdf.internal.pageSize.getWidth();   // 210 mm
+    const pageH = pdf.internal.pageSize.getHeight();  // 297 mm
+    const margin = 8;
+    const imgW  = pageW - margin * 2;
+    const imgH  = (canvas.height / canvas.width) * imgW;
+    const imgData = canvas.toDataURL('image/jpeg', 0.97);
 
-    let y = margin;
-    let heightLeft = imgH;
+    // Paginación: la imagen se "desplaza" hacia arriba en cada página
+    const pageContent = pageH - margin * 2;
+    let yOffset = 0;                       // cuánto de la imagen ya se mostró (en mm)
 
-    pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
-    heightLeft -= (pageH - margin * 2);
+    pdf.addImage(imgData, 'JPEG', margin, margin - yOffset, imgW, imgH);
+    yOffset += pageContent;
 
-    while (heightLeft > 0) {
+    while (yOffset < imgH) {
       pdf.addPage();
-      y = -(imgH - heightLeft) - margin;
-      pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
-      heightLeft -= (pageH - margin * 2);
+      pdf.addImage(imgData, 'JPEG', margin, margin - yOffset, imgW, imgH);
+      yOffset += pageContent;
     }
 
-    const numero  = document.getElementById('p-numero').value || '001';
+    const numero  = document.getElementById('p-numero').value.trim() || '001';
     const cliente = document.getElementById('p-cliente').value.trim().replace(/\s+/g, '_') || 'cliente';
     pdf.save(`Presupuesto_${numero}_${cliente}.pdf`);
+
+  } catch (err) {
+    console.error('Error PDF:', err);
+    alert('No se pudo generar el PDF: ' + err.message);
   } finally {
-    if (btn) { btn.innerHTML = textoOriginal; btn.disabled = false; }
+    btns.forEach(b => { b.innerHTML = b._txt; b.disabled = false; });
   }
 }
 
